@@ -233,61 +233,6 @@ class Tournament:
         self.results = results
         return results
     
-    def plot_results(self, title: str = "Tournament Results", save_path: Optional[str] = None) -> None:
-        """
-        Plot the results of the tournament.
-        
-        Args:
-            title: Title for the plot
-            save_path: Path to save the plot, if provided
-        """
-        if not self.results:
-            print("No results to plot. Run a tournament first.")
-            return
-        
-        # Extract agent names and win rates
-        agent_names = [name for name in self.results.keys() 
-                        if name not in [key for key in self.results.keys() if " vs " in key]]
-        
-        win_rates = [self.results[name]["win_rate"] for name in agent_names]
-        draw_rates = [self.results[name]["draw_rate"] for name in agent_names]
-        loss_rates = [1 - wr - dr for wr, dr in zip(win_rates, draw_rates)]
-        
-        # Sort by win rate
-        sorted_indices = np.argsort(win_rates)[::-1]
-        agent_names = [agent_names[i] for i in sorted_indices]
-        win_rates = [win_rates[i] for i in sorted_indices]
-        draw_rates = [draw_rates[i] for i in sorted_indices]
-        loss_rates = [loss_rates[i] for i in sorted_indices]
-        
-        # Create plot
-        plt.figure(figsize=(12, 8))
-        
-        # Bar positions
-        bar_width = 0.25
-        r1 = np.arange(len(agent_names))
-        r2 = [x + bar_width for x in r1]
-        r3 = [x + bar_width for x in r2]
-        
-        # Create bars
-        plt.bar(r1, win_rates, width=bar_width, label='Win', color='green')
-        plt.bar(r2, draw_rates, width=bar_width, label='Draw', color='gray')
-        plt.bar(r3, loss_rates, width=bar_width, label='Loss', color='red')
-        
-        # Add labels
-        plt.xlabel('Agent', fontsize=12)
-        plt.ylabel('Rate', fontsize=12)
-        plt.title(title, fontsize=14)
-        plt.xticks([r + bar_width for r in range(len(agent_names))], agent_names, rotation=45, ha='right')
-        plt.legend()
-        
-        plt.tight_layout()
-        
-        if save_path:
-            plt.savefig(save_path)
-            
-        plt.show()
-    
     def save_results_to_csv(self, path: str) -> None:
         """
         Save tournament results to a CSV file.

@@ -261,8 +261,7 @@ def main():
 
     elif args.mode == 'tournament':
         # run a tournament between all agents
-        print(f"\n*** Running tournament for {game_name} with\
-                {args.num_games} games per matchup ***")
+        print(f"\n*** Running tournament for {game_name} with {args.num_games} games per matchup ***")
 
         agents = []
 
@@ -283,9 +282,8 @@ def main():
 
         # if Q-table doesn't exist or load_qtable is False, train a new one
         if not os.path.exists(qtable_path) or not args.load_qtable:
-            print("\nNo pre-trained Q-table found or load_qtable=False.\
-                Training a new Q-learning agent...")
-            qlearning_agent = train_qlearning_agent(game_class, default_agent, 
+            print("\nNo pre-trained Q-table found or load_qtable=False. Training a new Q-learning agent...")
+            qlearning_agent = train_qlearning_agent(game_class, default_agent,
                                                     num_episodes=args.train_episodes,
                                                     save_path=qtable_path)
 
@@ -295,8 +293,6 @@ def main():
         results = tournament.run_tournament(agents, symmetric=True, render_final=args.render)
 
         tournament.print_detailed_results()
-        tournament.plot_results(title=f"{game_name} Tournament Results",
-                                save_path=f"results/{args.game}_tournament_results.png")
         tournament.save_results_to_csv(f"results/{args.game}_tournament_results.csv")
 
 if __name__ == "__main__":
