@@ -74,7 +74,7 @@ class TicTacToe:
             # draw has reward 0
 
         self.current_player = 3 - self.current_player  # toggles between 1 and 2
-        
+
         return self.board.copy(), reward, self.done, {"valid": True, "winner": self.winner}
 
     def _check_game_over(self) -> None:

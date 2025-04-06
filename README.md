@@ -24,7 +24,7 @@ project/
 │   └── qlearning_agent.py    # Q-learning implementation
 ├── evaluation/
 │   ├── __init__.py
-│   └── tournament.py         # Tournament functions to evaluate agents
+│   └── evaluator.py          # Evaluator functions to evaluate agents
 ├── results/                  # Directory for storing results
 ├── main.py                   # Main entry point
 └── README.md                 # This file
@@ -46,16 +46,16 @@ pip install numpy matplotlib pandas tqdm
 
 ## Running the Project
 
-### Tournament Mode
+### Evaluator Mode
 
-Run a tournament to compare all algorithms against each other:
+Run a evaluator to compare all algorithms against each other:
 
 ```bash
 # For Tic Tac Toe
-python main.py --game tictactoe --mode tournament --num_games 100
+python main.py --game tictactoe --mode evaluator --num_games 100
 
 # For Connect 4
-python main.py --game connect4 --mode tournament --num_games 50
+python main.py --game connect4 --mode evaluator --num_games 50
 ```
 
 ### Training Q-Learning Agent
@@ -94,20 +94,20 @@ python main.py --game tictactoe --mode depth_test --num_games 10
 python main.py --game connect4 --mode depth_test --num_games 5
 ```
 
-## Tournament with Pre-trained Q-Learning
+## Evaluator with Pre-trained Q-Learning
 
-To run a tournament using a pre-trained Q-learning agent:
+To run a evaluator using a pre-trained Q-learning agent:
 
 ```bash
-python main.py --game tictactoe --mode tournament --load_qtable --num_games 100
+python main.py --game tictactoe --mode evaluator --load_qtable --num_games 100
 ```
 
 ## Command Line Arguments
 
 - `--game`: Game to play (`tictactoe` or `connect4`)
-- `--mode`: Mode to run (`tournament`, `train`, `play`, or `depth_test`)
-- `--num_games`: Number of games to play in tournament or depth_test mode
-- `--render`: Render games in play mode or the final game in tournament mode
+- `--mode`: Mode to run (`evaluator`, `train`, `play`, or `depth_test`)
+- `--num_games`: Number of games to play in evaluator or depth_test mode
+- `--render`: Render games in play mode or the final game in evaluator mode
 - `--train_episodes`: Number of episodes for Q-learning training
 - `--load_qtable`: Load previously trained Q-table for Q-learning
 
@@ -137,7 +137,7 @@ python main.py --game tictactoe --mode tournament --load_qtable --num_games 100
 
 ### Evaluation
 
-The tournament system collects comprehensive metrics:
+The game evaluator system collects comprehensive metrics:
 - Win/loss/draw statistics
 - Game length statistics
 - Execution time measurements

@@ -12,7 +12,7 @@ from agents.default_agent import DefaultAgent
 from agents.minimax_agent import MinimaxAgent
 from agents.qlearning_agent import QLearningAgent
 
-from evaluation.tournament import Tournament
+from evaluator.evaluator import Evaluator
 
 def train_qlearning_agent(game_class, opponent, num_episodes=10000, save_path=None):
     """
@@ -174,32 +174,30 @@ def compare_minimax_depth_effect(game_class, depths=[None, 1, 2, 3, 4, 5], num_g
         Dictionary with results
     """
     print(f"Comparing Minimax depth effect for {game_class.__name__}...")
-    
+
     default_agent = DefaultAgent(player_id=2)
     results = {}
-    
+
     for depth in depths:
         depth_name = "Unlimited" if depth is None else str(depth)
         print(f"Testing depth: {depth_name}")
-        
+
         minimax_agent = MinimaxAgent(player_id=1, use_alpha_beta=True, max_depth=depth)
-        
-        # Create a mini-tournament
-        tournament = Tournament(game_class, num_games=num_games)
-        tournament_results = tournament.run_match(minimax_agent, default_agent, render=False)
-        
-        # Store results
+
+        e = Evaluator(game_class, num_games=num_games)
+        e_results = e.run_game(minimax_agent, default_agent, render=False)
+
         results[depth] = {
-            "nodes_visited": tournament_results["agent1_nodes"],
-            "execution_time": tournament_results["agent1_time"],
+            "nodes_visited": e_results["agent1_nodes"],
+            "execution_time": e_results["agent1_time"],
             "depth": depth,
-            "result": "Win" if tournament_results["winner"] == 1 else 
-                    "Draw" if tournament_results["winner"] == 0 else "Loss"
+            "result": "Win" if e_results["winner"] == 1 else 
+                    "Draw" if e_results["winner"] == 0 else "Loss"
         }
-        
-        print(f"  Depth {depth_name}: Nodes visited = {tournament_results['agent1_nodes']}, Time = {tournament_results['agent1_time']:.4f}s")
+
+        print(f"  Depth {depth_name}: Nodes visited = {e_results['agent1_nodes']}, Time = {e_results['agent1_time']:.4f}s")
         print(f"  Result: {results[depth]['result']}")
-    
+
     return results
 
 def main():
@@ -207,11 +205,11 @@ def main():
     parser = argparse.ArgumentParser(description='Compare game-playing agents.')
     parser.add_argument('--game', type=str, default='tictactoe', choices=['tictactoe', 'connect4'],
                         help='Game to play (tictactoe or connect4)')
-    parser.add_argument('--mode', type=str, default='tournament',
-                        choices=['tournament', 'train', 'play', 'depth_test'],
-                        help='Mode to run (tournament, train, play, depth_test)')
+    parser.add_argument('--mode', type=str, default='evaluator',
+                        choices=['evaluator', 'train', 'play', 'depth_test'],
+                        help='Mode to run (evaluator, train, play, depth_test)')
     parser.add_argument('--num_games', type=int, default=100,
-                        help='Number of games to play in tournament mode')
+                        help='Number of games to play in evaluator mode')
     parser.add_argument('--render', action='store_true',
                         help='Render games in play mode')
     parser.add_argument('--train_episodes', type=int, default=5000,
@@ -259,9 +257,9 @@ def main():
             depth_name = "Unlimited" if depth is None else str(depth)
             print(f"Depth {depth_name}: Nodes = {data['nodes_visited']}, Time = {data['execution_time']:.4f}s, Result = {data['result']}")
 
-    elif args.mode == 'tournament':
-        # run a tournament between all agents
-        print(f"\n*** Running tournament for {game_name} with {args.num_games} games per matchup ***")
+    elif args.mode == 'evaluator':
+        # run game evaluator between all agents
+        print(f"\n*** Running benchmark or game performance evaulator for {game_name} with {args.num_games} games per agents ***")
 
         agents = []
 
@@ -280,7 +278,6 @@ def main():
                                         load_qtable=args.load_qtable,
                                         save_path=qtable_path)
 
-        # if Q-table doesn't exist or load_qtable is False, train a new one
         if not os.path.exists(qtable_path) or not args.load_qtable:
             print("\nNo pre-trained Q-table found or load_qtable=False. Training a new Q-learning agent...")
             qlearning_agent = train_qlearning_agent(game_class, default_agent,
@@ -289,11 +286,11 @@ def main():
 
         agents.append((qlearning_agent, "Q-Learning Agent"))
 
-        tournament = Tournament(game_class, num_games=args.num_games)
-        results = tournament.run_tournament(agents, symmetric=True, render_final=args.render)
+        e = Evaluator(game_class, num_games=args.num_games)
+        results = e.run_evaluator(agents, symmetric=True, render_final=args.render)
 
-        tournament.print_detailed_results()
-        tournament.save_results_to_csv(f"results/{args.game}_tournament_results.csv")
+        e.print_detailed_results()
+        e.save_results_to_csv(f"results/{args.game}_evaluator_results.csv")
 
 if __name__ == "__main__":
     main()
