@@ -301,15 +301,14 @@ class Evaluator:
 
         return df
 
-    def plot_efficiency_comparison(self,
-                                    title: str = "Algorithm Efficiency Comparison",
+    def plot_efficiency_comparison(self, title: str = "Algorithm efficiency comparison",
                                     save_path: Optional[str] = None) -> None:
         """
-        Plot an efficiency comparison focusing on nodes visited and execution time.
+        Generate separate plots for efficiency metrics.
 
         Args:
-            title: Title for the plot
-            save_path: Path to save the plot, if provided
+            title: Base title for the plots
+            save_path: Base path to save the plots, if provided
         """
         if not self.results:
             print("No results to plot. Run game evaluator first.")
@@ -336,42 +335,81 @@ class Evaluator:
             print("No efficiency data to plot.")
             return
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 14))
-
+        # 1. plot for nodes visited
+        plt.figure(figsize=(10, 6))
         sorted_indices = np.argsort(nodes_visited)
+        print("sorted_indices: ", sorted_indices)
         sorted_games = [games[i] for i in sorted_indices]
+        print("sorted_games: ", sorted_games)
         sorted_agent1 = [agent1_names[i] for i in sorted_indices]
+        print("sorted_agent1: ", sorted_agent1)
         sorted_nodes = [nodes_visited[i] for i in sorted_indices]
-        sorted_times = [exec_times[i] for i in sorted_indices]
+        print("sorted_nodes: ", sorted_nodes)
 
-        node_bars = ax1.bar(sorted_games, sorted_nodes, color='skyblue')
-        ax1.set_title('Nodes visited per algorithm', fontsize=16)
-        ax1.set_ylabel('Average nodes visited', fontsize=14)
-        ax1.tick_params(axis='x', rotation=45, labelsize=12)
+        labels = []
+        for game in sorted_games:
+            parts = game.split(" vs ")
+            labels.append(f"{parts[0]}")
+
+        unique_labels = tuple(set(labels))
+        print("unique_labels: ", unique_labels)
+        avg_nodes_alg = []
+        for i in range(0, len(sorted_nodes), 3):
+            avg_nodes_alg.append(np.mean(sorted_nodes[i:i+3]))
+
+        node_bars = plt.bar(unique_labels, avg_nodes_alg, color='#4285F4')
+        plt.title('Nodes visited by each algorithm', fontsize=14)
+        plt.ylabel('Average nodes visited', fontsize=12)
+        plt.xticks(rotation=45, ha='right', fontsize=10)
+        plt.grid(axis='y', linestyle='--', alpha=0.3)
 
         for bar in node_bars:
             height = bar.get_height()
-            ax1.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
-                    f'{int(height):,}', ha='center', va='bottom', fontsize=10)
+            plt.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                    f'{int(height):,}', ha='center', va='bottom', fontsize=9)
 
-        time_bars = ax2.bar(sorted_games, sorted_times, color='lightgreen')
-        ax2.set_title('Execution time per algorithm', fontsize=16)
-        ax2.set_ylabel('Average execution time (seconds)', fontsize=14)
-        ax2.tick_params(axis='x', rotation=45, labelsize=12)
+        plt.tight_layout()
+
+        if save_path:
+            nodes_path = save_path.replace('.png', '_nodes_visited.png')
+            plt.savefig(nodes_path, dpi=300, bbox_inches='tight')
+            print(f"Nodes visited plot saved to {nodes_path}")
+
+        # 2. plot for execution time
+        plt.figure(figsize=(10, 6))
+        sorted_times = [exec_times[i] for i in sorted_indices]
+        print("sorted_times: ", sorted_times)
+
+        avg_times_alg = []
+        for i in range(0, len(sorted_times), 3):
+            avg_times_alg.append(np.mean(sorted_times[i:i+3]))
+
+        time_bars = plt.bar(unique_labels, avg_times_alg, color='#34A853')
+        plt.title('Execution time by algorithm', fontsize=14)
+        plt.ylabel('Average execution time (seconds)', fontsize=12)
+        plt.xticks(rotation=45, ha='right', fontsize=10)
+        plt.grid(axis='y', linestyle='--', alpha=0.3)
 
         for bar in time_bars:
             height = bar.get_height()
-            ax2.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
-                    f'{height:.4f}s', ha='center', va='bottom', fontsize=10)
+            plt.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                    f'{height:.4f}s', ha='center', va='bottom', fontsize=9)
 
-        # for Minimax variants, let's do a special comparison
+        plt.tight_layout()
+
+        if save_path:
+            time_path = save_path.replace('.png', '_execution_time.png')
+            plt.savefig(time_path, dpi=300, bbox_inches='tight')
+            print(f"Execution time plot saved to {time_path}")
+
+        # 3. plot for Alpha-Beta pruning comparison
         minimax_without = [node for agent, node in zip(
             agent1_names, nodes_visited) if "Minimax without" in agent]
         minimax_with = [node for agent, node in zip(
             agent1_names, nodes_visited) if "Minimax with" in agent and "without" not in agent]
 
         if minimax_without and minimax_with:
-            plt.figure(figsize=(10, 6))
+            plt.figure(figsize=(8, 6))
 
             avg_without = sum(minimax_without) / len(minimax_without)
             avg_with = sum(minimax_with) / len(minimax_with)
@@ -379,34 +417,73 @@ class Evaluator:
             labels = ['Minimax without\nAlpha-Beta', 'Minimax with\nAlpha-Beta']
             values = [avg_without, avg_with]
 
-            bars = plt.bar(labels, values, color=['#ff9999', '#66b3ff'])
+            bars = plt.bar(labels, values, color=['#EA4335', '#4285F4'], width=0.5)
 
             for bar in bars:
                 height = bar.get_height()
                 plt.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
-                        f'{int(height):,}', ha='center', va='bottom', fontsize=12)
+                        f'{int(height):,}', ha='center', va='bottom', fontsize=10)
 
-            plt.title('Impact of Alpha-Beta pruning on nodes visited', fontsize=16)
-            plt.ylabel('Average nodes visited', fontsize=14)
+            plt.title('Impact of Alpha-Beta pruning', fontsize=14)
+            plt.ylabel('Average nodes visited', fontsize=12)
+            plt.grid(axis='y', linestyle='--', alpha=0.3)
 
+            # calculate efficiency gain and add annotation
             efficiency = ((avg_without - avg_with) / avg_without) * 100
-            plt.figtext(0.5, 0.01,
-                        f'Alpha-Beta pruning reduces nodes visited by {efficiency:.1f}%',
-                        ha='center', fontsize=14, bbox={"facecolor":"orange", "alpha":0.2, "pad":5})
+            plt.annotate(f'{efficiency:.1f}% reduction in nodes',
+                    xy=(1, avg_with/3 + (avg_without - avg_with)/5),
+                    xytext=(1.3, avg_with + (avg_without - avg_with)/2),
+                    arrowprops=dict(facecolor='black', shrink=0.05, width=1.5, headwidth=8),
+                    fontsize=12,
+                    bbox=dict(boxstyle="round,pad=0.5", fc="lightyellow", ec="black", lw=1, alpha=0.9))
 
-            plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+            plt.tight_layout()
 
             if save_path:
                 ab_path = save_path.replace('.png', '_alpha_beta_comparison.png')
                 plt.savefig(ab_path, dpi=300, bbox_inches='tight')
                 print(f"Alpha-Beta comparison saved to {ab_path}")
 
-        plt.figure(fig.number)
-        plt.tight_layout()
+        # 4. plot for time comparison for Minimax variants
+        minimax_without_time = [time for agent, time in zip(
+            agent1_names, exec_times) if "Minimax without" in agent]
+        minimax_with_time = [time for agent, time in zip(
+            agent1_names, exec_times) if "Minimax with" in agent and "without" not in agent]
 
-        if save_path:
-            efficiency_path = save_path.replace('.png', '_efficiency.png')
-            plt.savefig(efficiency_path, dpi=300, bbox_inches='tight')
-            print(f"Efficiency comparison saved to {efficiency_path}")
+        if minimax_without_time and minimax_with_time:
+            plt.figure(figsize=(8, 6))
+
+            avg_without_time = sum(minimax_without_time) / len(minimax_without_time)
+            avg_with_time = sum(minimax_with_time) / len(minimax_with_time)
+
+            labels = ['Minimax without\nAlpha-Beta', 'Minimax with\nAlpha-Beta']
+            values = [avg_without_time, avg_with_time]
+
+            bars = plt.bar(labels, values, color=['#EA4335', '#4285F4'], width=0.5)
+
+            for bar in bars:
+                height = bar.get_height()
+                plt.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                        f'{height:.4f}s', ha='center', va='bottom', fontsize=10)
+
+            plt.title('Execution time comparison with Alpha-Beta pruning effect', fontsize=14)
+            plt.ylabel('Average execution time (seconds)', fontsize=12)
+            plt.grid(axis='y', linestyle='--', alpha=0.3)
+
+            # plot for calculate time savings and add annotation
+            time_savings = ((avg_without_time - avg_with_time) / avg_without_time) * 100
+            plt.annotate(f'{time_savings:.1f}% reduction in time',
+                    xy=(1, avg_with_time/3 + (avg_without_time - avg_with_time)/5),
+                    xytext=(1.3, avg_with_time + (avg_without_time - avg_with_time)/2),
+                    arrowprops=dict(facecolor='black', shrink=0.05, width=1.5, headwidth=8),
+                    fontsize=12,
+                    bbox=dict(boxstyle="round,pad=0.5", fc="lightyellow", ec="black", lw=1, alpha=0.9))
+
+            plt.tight_layout()
+
+            if save_path:
+                time_comp_path = save_path.replace('.png', '_time_comparison.png')
+                plt.savefig(time_comp_path, dpi=300, bbox_inches='tight')
+                print(f"Time comparison saved to {time_comp_path}")
 
         plt.show()
