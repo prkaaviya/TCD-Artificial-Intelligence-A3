@@ -260,7 +260,7 @@ class Evaluator:
         df_overall['draw_rate'] = df_overall.get('draw_rate', 0).apply(lambda x: f"{x:.2%}")
         print(df_overall[['wins', 'draws', 'losses', 'win_rate', 'total_games']])
 
-        print("\Full game results:")
+        print("Full game results:")
         for key, value in self.results.items():
             if " vs " in key:
                 print(f"\n{key}:")
@@ -275,3 +275,138 @@ class Evaluator:
                     print(f"  Player 1 Average Nodes Visited: {value['avg_agent1_nodes']:.1f}")
                 if 'avg_agent2_nodes' in value:
                     print(f"  Player 2 Average Nodes Visited: {value['avg_agent2_nodes']:.1f}")
+
+    def save_detailed_results_to_csv(self, path: str) -> None:
+        """
+        Save detailed game results to a CSV file.
+
+        Args:
+            path: Path to save the CSV file
+        """
+        if not self.results:
+            print("No results to save. Run game evaluator first.")
+            return
+
+        game_stats = {}
+        for key, value in self.results.items():
+            if " vs " in key:
+                game_stats[key] = value
+
+        df = pd.DataFrame(game_stats).T
+        df.index.name = 'GameStats'
+
+        detailed_path = path.replace('.csv', '_detailed.csv')
+        df.to_csv(detailed_path)
+        print(f"Detailed results saved to {detailed_path}")
+
+        return df
+
+    def plot_efficiency_comparison(self,
+                                    title: str = "Algorithm Efficiency Comparison",
+                                    save_path: Optional[str] = None) -> None:
+        """
+        Plot an efficiency comparison focusing on nodes visited and execution time.
+
+        Args:
+            title: Title for the plot
+            save_path: Path to save the plot, if provided
+        """
+        if not self.results:
+            print("No results to plot. Run game evaluator first.")
+            return
+
+        games = []
+        agent1_names = []
+        agent2_names = []
+        nodes_visited = []
+        exec_times = []
+
+        for key, value in self.results.items():
+            if " vs " in key and "avg_agent1_nodes" in value:
+                parts = key.split(" vs ")
+                agent1, agent2 = parts[0], parts[1]
+
+                games.append(key)
+                agent1_names.append(agent1)
+                agent2_names.append(agent2)
+                nodes_visited.append(value["avg_agent1_nodes"])
+                exec_times.append(value["avg_agent1_time"])
+
+        if not games:
+            print("No efficiency data to plot.")
+            return
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 14))
+
+        sorted_indices = np.argsort(nodes_visited)
+        sorted_games = [games[i] for i in sorted_indices]
+        sorted_agent1 = [agent1_names[i] for i in sorted_indices]
+        sorted_nodes = [nodes_visited[i] for i in sorted_indices]
+        sorted_times = [exec_times[i] for i in sorted_indices]
+
+        node_bars = ax1.bar(sorted_games, sorted_nodes, color='skyblue')
+        ax1.set_title('Nodes visited per algorithm', fontsize=16)
+        ax1.set_ylabel('Average nodes visited', fontsize=14)
+        ax1.tick_params(axis='x', rotation=45, labelsize=12)
+
+        for bar in node_bars:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                    f'{int(height):,}', ha='center', va='bottom', fontsize=10)
+
+        time_bars = ax2.bar(sorted_games, sorted_times, color='lightgreen')
+        ax2.set_title('Execution time per algorithm', fontsize=16)
+        ax2.set_ylabel('Average execution time (seconds)', fontsize=14)
+        ax2.tick_params(axis='x', rotation=45, labelsize=12)
+
+        for bar in time_bars:
+            height = bar.get_height()
+            ax2.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                    f'{height:.4f}s', ha='center', va='bottom', fontsize=10)
+
+        # for Minimax variants, let's do a special comparison
+        minimax_without = [node for agent, node in zip(
+            agent1_names, nodes_visited) if "Minimax without" in agent]
+        minimax_with = [node for agent, node in zip(
+            agent1_names, nodes_visited) if "Minimax with" in agent and "without" not in agent]
+
+        if minimax_without and minimax_with:
+            plt.figure(figsize=(10, 6))
+
+            avg_without = sum(minimax_without) / len(minimax_without)
+            avg_with = sum(minimax_with) / len(minimax_with)
+
+            labels = ['Minimax without\nAlpha-Beta', 'Minimax with\nAlpha-Beta']
+            values = [avg_without, avg_with]
+
+            bars = plt.bar(labels, values, color=['#ff9999', '#66b3ff'])
+
+            for bar in bars:
+                height = bar.get_height()
+                plt.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                        f'{int(height):,}', ha='center', va='bottom', fontsize=12)
+
+            plt.title('Impact of Alpha-Beta pruning on nodes visited', fontsize=16)
+            plt.ylabel('Average nodes visited', fontsize=14)
+
+            efficiency = ((avg_without - avg_with) / avg_without) * 100
+            plt.figtext(0.5, 0.01,
+                        f'Alpha-Beta pruning reduces nodes visited by {efficiency:.1f}%',
+                        ha='center', fontsize=14, bbox={"facecolor":"orange", "alpha":0.2, "pad":5})
+
+            plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+
+            if save_path:
+                ab_path = save_path.replace('.png', '_alpha_beta_comparison.png')
+                plt.savefig(ab_path, dpi=300, bbox_inches='tight')
+                print(f"Alpha-Beta comparison saved to {ab_path}")
+
+        plt.figure(fig.number)
+        plt.tight_layout()
+
+        if save_path:
+            efficiency_path = save_path.replace('.png', '_efficiency.png')
+            plt.savefig(efficiency_path, dpi=300, bbox_inches='tight')
+            print(f"Efficiency comparison saved to {efficiency_path}")
+
+        plt.show()

@@ -1,5 +1,0 @@
-Agent,wins,losses,draws,win_rate,avg_moves,avg_time,total_games,draw_rate
-Default Agent,17.0,13.0,0.0,0.5666666666666667,0.0,0.0,30.0,0.0
-Minimax without Alpha-Beta,15.0,15.0,0.0,0.5,0.0,0.0,30.0,0.0
-Minimax with Alpha-Beta,15.0,15.0,0.0,0.5,0.0,0.0,30.0,0.0
-Q-Learning Agent,13.0,17.0,0.0,0.43333333333333335,0.0,0.0,30.0,0.0

@@ -290,7 +290,11 @@ def main():
         results = e.run_evaluator(agents, symmetric=True, render_final=args.render)
 
         e.print_detailed_results()
-        e.save_results_to_csv(f"results/{args.game}_evaluator_results.csv")
+        e.save_results_to_csv(f"results/{args.game}_summary.csv")
+        e.save_detailed_results_to_csv(f"results/{args.game}_full.csv")
+
+        e.plot_efficiency_comparison(title=f"{game_name} algorithm efficiency",
+                        save_path=f"results/{args.game}_efficiency.png")
 
 if __name__ == "__main__":
     main()
